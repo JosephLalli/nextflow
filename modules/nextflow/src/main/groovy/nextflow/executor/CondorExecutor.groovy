@@ -60,7 +60,6 @@ class CondorExecutor extends AbstractGridExecutor {
         def lines = getDirectives(task)
         lines.join('\n')
     }
-
     // Condor does not require a special token or header
     protected String getHeaderToken() { return '' }
 
@@ -86,6 +85,7 @@ class CondorExecutor extends AbstractGridExecutor {
         result << "out = ${TaskRun.CMD_OUTFILE}".toString()
         result << "error = ${TaskRun.CMD_ERRFILE}".toString()
         result << "log = .condor_runlog.uuid-${session.uniqueId}.log".toString()
+
 
         result << "transfer_executable = False" // handled by nextflow
         result << "transfer_output_files=\"\""  // ditto
@@ -115,6 +115,7 @@ class CondorExecutor extends AbstractGridExecutor {
                 result.addAll( opts.toString().tokenize(';\n').collect{ it.trim() })
             }
         }
+      
         if ( ! pipeLauncherScript() ) {
             result << "executable = ${task.CMD_RUN}".toString()
             result << "environment = ${task.getEnvironment()}".toString()
