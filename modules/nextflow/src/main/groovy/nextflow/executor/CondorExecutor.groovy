@@ -60,13 +60,6 @@ class CondorExecutor extends AbstractGridExecutor {
         def lines = getDirectives(task)
         lines.join('\n')
     }
-
-    // @Override
-    // protected String getHeaderToken() {
-    //     throw new UnsupportedOperationException()
-    // }
-
-
     // Condor does not require a special token or header
     protected String getHeaderToken() { return '' }
 
@@ -89,19 +82,16 @@ class CondorExecutor extends AbstractGridExecutor {
     @Override
     protected List<String> getDirectives(TaskRun task, List<String> result) {
 
-        result << "universe = vanilla"
-
         result << "out = ${TaskRun.CMD_OUTFILE}".toString()
         result << "error = ${TaskRun.CMD_ERRFILE}".toString()
         result << "log = .condor_runlog.uuid-${session.uniqueId}.log".toString()
-        result << "getenv = true"
+
 
         result << "transfer_executable = False" // handled by nextflow
         result << "transfer_output_files=\"\""  // ditto
 
         if( task.config.getCpus()>1 ) {
             result << "request_cpus = ${task.config.getCpus()}".toString()
-            result << "machine_count = 1"
         }
 
         if( task.config.getMemory() ) {
@@ -125,10 +115,16 @@ class CondorExecutor extends AbstractGridExecutor {
                 result.addAll( opts.toString().tokenize(';\n').collect{ it.trim() })
             }
         }
-        if ( ! pipeLauncherScript() && ! task.isContainerEnabled() ) {
-                result << "executable = ${task.CMD_RUN}".toString()
-                result << "environment = ${task.getEnvironment()}".toString()
-            }
+      
+        if ( ! pipeLauncherScript() ) {
+            result << "executable = ${task.CMD_RUN}".toString()
+            result << "environment = ${task.getEnvironment()}".toString()
+            if ( task.isContainerEnabled() ) {
+                    result << "universe = container"
+                    result << "image = ${task.getContainer()}".toString()
+                } else {
+                    result << "universe = vanilla"
+                }
             result << 'queue'
         }
         return result
